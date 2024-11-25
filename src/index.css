@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+    background-color: #d2d8d6;
+    height: 100vh;
+    max-height: 100vh; 
+    margin: 0; 
+}
+
+.nav{
+    display: flex;
+    justify-content: center;
+}
+
+.logo{
+    width: 15%;
+    background-color: #d7d4e6;
+    border-radius: 25px;
+}
+
+.icon-arrow{
+    cursor: pointer;
+}
