@@ -4,26 +4,18 @@ import { JX } from "../../lib/JX";
 
 
 
-
-function FormItens({nota}) {
-
+function FormNovoItem() {
     const [itens, setItens] = useState([]); 
     const [codprod, setCodprod] = useState([]);
-    const [listaProdutos, setLista] = useState([]);
     const [selectedProduct, setSelectedProduct] = useState(null); 
     const [selectedCodprod, setSelectedCodprod] = useState(null); 
-    
+  
     useEffect(() => {
       mostrarItens(); 
     }, []);
   
     const mostrarItens = async () => {
-      const query = " SELECT PRO.CODPROD, PRO.DESCRPROD, PRO.CODVOL "
-      +" ,(SELECT ROUND(ENTRADASEMICMS,2) FROM TGFCUS WHERE CODPROD = PRO.CODPROD AND CODEMP =1  "
-      +" AND DTATUAL = (SELECT MAX(DTATUAL) FROM TGFCUS WHERE CODPROD = PRO.CODPROD AND CODEMP =1 )) AS VALORUNIT "
-      +" FROM TGFPRO PRO  "
-      +" WHERE USOPROD IN ('B','I','C') AND ATIVO = 'S' "
-      +" AND PRO.CODPROD = (SELECT TOP 1 CODPROD FROM TGFCUS WHERE TGFCUS.CODPROD = PRO.CODPROD) ";
+      const query = "SELECT PRO.CODPROD, PRO.DESCRPROD FROM TGFPRO PRO WHERE CODGRUPOPROD = 6002800";
   
       try {
         const result = await JX.consultar(query); 
@@ -40,54 +32,38 @@ function FormItens({nota}) {
           value: item.CODPROD,
           label: item.CODPROD,
         }));
-        const listaProdutos = result.map((item) => ({
-            CODPROD: item.CODPROD,
-            DESCRPROD: item.DESCRPROD,
-            CODVOL: item.CODVOL,
-            VALORUNIT:item.VALORUNIT
-        }));
-
-
+  
         setCodprod(codProdArray);
         setItens(itensArray); 
-        setLista(listaProdutos);
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
       }
     };
   
-    // Atualiza ambos os selects ao mudar o código
+   
     const handleCodprodChange = (selectedOption) => {
-      setSelectedCodprod(selectedOption); // Atualiza o código selecionado
-      setSelectedProduct(itens.find((item) => item.value === selectedOption?.value) || null); // Sincroniza com o produto
+      setSelectedCodprod(selectedOption); 
+      setSelectedProduct(itens.find((item) => item.value === selectedOption?.value) || null); 
       console.log("Código selecionado:", selectedOption);
     };
   
-    // Atualiza ambos os selects ao mudar o produto
+    
     const handleProductChange = (selectedOption) => {
-      setSelectedProduct(selectedOption); // Atualiza o produto selecionado
-      setSelectedCodprod(codprod.find((item) => item.value === selectedOption?.value) || null); // Sincroniza com o código
+      setSelectedProduct(selectedOption); 
+      setSelectedCodprod(codprod.find((item) => item.value === selectedOption?.value) || null); 
       console.log("Produto selecionado:", selectedOption);
     };
 
 
-    const salvarDados = async (e) =>{
-
-        let dadosIte = [];
-
-        dadosIte.push({
-            CODEMP:1,
-            NUNOTA:2580720,
-            CODPROD:5022056,
-            CODLOCALORIG:1140000,
-            CODVOL:"UN",
-            RESERVA:"S",
-            ATUALESTOQUE:1,
-            QTDNEG:1
-        })
-
-       const result = await JX.salvar(dadosIte[0],"ItemNota",[{}]);
-       console.log("JX.SALVAR=",result)
+    const insereNaIte = (e) =>{
+         let dadoIte = [];
+         
+         dadoIte.push({
+            CODEMP: 1,
+            CODPROD:codprod,
+            QTDNEG:qtdneg,
+            NUNOTA: nunota
+         })
 
     }
   
@@ -135,18 +111,10 @@ function FormItens({nota}) {
               />
             </div>
           </div>
-
-          <button
-                    type="button"
-                    className="focus:outline-none text-white bg-green-700 hover:bg-green-800 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 mt-5"
-                    onClick={salvarDados}
-                >
-                    Salvar
-                </button>
         </form>
       </>
     );
   }
 
-export default FormItens;
+export default FormNovoItem;
 

@@ -1,11 +1,21 @@
 import React, { useRef, useState } from "react";
 import SignatureCanvas from "react-signature-canvas";
 import { JX } from "../../lib/JX";
+import { get } from "http";
+import { useEffect } from 'react';
 
-function FormCabecalho() {
+
+
+function FormCabecalho({nota}) {
     const signatureRef = useRef(null);
     const [nunota, setNunota] = useState('');
     const [erro, setErro] = useState('');
+    
+
+    useEffect(()=>{
+        console.log('NUNOTA=',{nota})
+        
+    },[])
 
     const clearSignature = () => {
         signatureRef.current.clear();
@@ -24,38 +34,59 @@ function FormCabecalho() {
         return hexString;  
     };
 
-    const handleSaveSignature = () => {
+        // Função para converter base64 para Blob
+        const dataURLToBlob = (dataURL) => {
+            const [header, data] = dataURL.split(',');
+            const mime = header.match(/:(.*?);/)[1];
+            const binary = atob(data);
+            const array = [];
+            for (let i = 0; i < binary.length; i++) {
+                array.push(binary.charCodeAt(i));
+            }
+            return new Blob([new Uint8Array(array)], { type: mime });
+        };
+
+    const handleSaveSignature =  () => {
         if (signatureRef.current) {
-            const dataURL = signatureRef.current.toDataURL('image/png');  // Converte a assinatura para um DataURL base64
-            const base64String = dataURL.replace(/^data:image\/png;base64,/, '');  // Remove o prefixo base64
-            const hexString = base64ToHex(base64String);  // Converte o base64 para hexadecimal
-    
-            console.log('Assinatura em Hexadecimal:', hexString);
-    
-            JX.salvar(
-                {
-                    ASSINATURA: `0x${hexString}`  
-                },
-                "AD_ASSINATURAALMOX",
-                [
-                    {
-                        NUNOTA: 2143823, 
-                    },
-                ]
-            )
-                .then((data) => {
-                    const response = data[0];
-                    if (response.status === "0") {
-                        setErro(response.statusMessage);
-                    } else {
-                        setErro('');
-                        alert('Assinatura salva com sucesso!');
+
+            function getSessionToken() {
+                return JX.getCookie('JSESSIONID').replace(/\..*/, '');
+            }
+        
+            const sessionToken = getSessionToken();
+
+
+            const imageBase64 = signatureRef.current.toDataURL();
+            console.log('Imagem Base64:', imageBase64);
+
+            // Converta para Blob
+            const blob = dataURLToBlob(imageBase64);
+
+            // Configure os dados do formulário
+            const formData = new FormData();
+            formData.append('img', blob, 'signature.png'); // Adiciona o Blob com nome de arquivo
+            formData.append('codigo', sessionToken); // Substitua pelo código real
+            formData.append('nunota', '12345675'); // Substitua pelo número real
+
+            fetch('http://192.168.0.10:5000/avalicoesriscos-1.0/api/avaliacao/insereImg', {
+                mode: 'no-cors',
+                method: 'POST',
+                body: formData,
+            })
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error(`Erro na requisição: ${response.status}`);
                     }
+                    return response.json();
+                })
+                .then((data) => {
+                    console.log('Resposta do servidor:', data);
                 })
                 .catch((error) => {
-                    console.error('Erro ao salvar:', error);
-                    setErro('Erro ao salvar a assinatura. Tente novamente.');
+                    console.error('Erro ao enviar:', error);
                 });
+
+
         } else {
             console.error('Nenhuma assinatura encontrada.');
             setErro('Assinatura não encontrada.');
@@ -84,11 +115,13 @@ function FormCabecalho() {
                             Nro. Nota
                         </label>
                         <input
+
                             type="text"
                             id="nunota"
-                            value={nunota}
+                            value={nota}
                             onChange={(e) => setNunota(e.target.value)}
                             className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs"
+                            disabled
                         />
                     </div>
                 </div>
@@ -139,3 +172,44 @@ function FormCabecalho() {
 }
 
 export default FormCabecalho;
+
+
+async function  consumindoApiAvaliacao(file){
+    function getSessionToken() {
+        return JX.getCookie('JSESSIONID').replace(/\..*/, '');
+    }
+
+    const sessionToken = getSessionToken();
+    
+
+        const url = 'http://192.168.0.10:5000/avalicoesriscos-1.0/api/avaliacao/insereImg';
+
+    
+
+          
+
+          const formData = new FormData();
+          formData.append("nunota", 1234569);
+          formData.append("img", file);
+          formData.append("codigo", sessionToken);
+
+
+         console.log(formData.values);
+              const response = await fetch(url, {
+                  method: "POST", 
+                  headers: {
+                      "Content-Type": "multipart/form-data" 
+                  },
+                  mode: 'no-cors',
+                  body: formData
+              });
+              
+              console.log("token="+sessionToken + " responsew="+response);
+              if(response.status == 200 || response.status == 201 || response.status == 1){
+                alert('Assinatura salva com sucesso!');
+              }else {alert('Não foi possível salvar assinatura')}
+
+
+}
+
+

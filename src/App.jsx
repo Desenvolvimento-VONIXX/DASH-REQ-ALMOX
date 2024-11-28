@@ -18,14 +18,6 @@ function App() {
             </span>
           </div>
 
-          <button
-            type="button"
-            className="focus:outline-none text-white bg-green-700 hover:bg-green-800 font-medium rounded-lg text-sm px-4 py-2 sm:px-5 sm:py-2.5 flex items-center space-x-2"
-            onClick={() => setShowModal(true)}
-          >
-            <FaPlus />
-            <span className="hidden sm:block">Nova Requisição</span>
-          </button>
         </div>
       </nav>
 
@@ -36,7 +28,6 @@ function App() {
       {showModal && (
         <ModalNovaRequisicao
           onClose={() => setShowModal(false)}
-
         />
       )}
     </>
