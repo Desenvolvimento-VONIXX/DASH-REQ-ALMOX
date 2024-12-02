@@ -6,12 +6,13 @@ import FormCabecalho from "../Forms/FormCabecalho";
 import FormItens from "../Forms/FormItens";
 import TableItens from "../Table/TableItens";
 import { FaTable } from "react-icons/fa";
+import FormTrocar from "../Forms/FormNovoItem";
 
-function EtapasSolicitacao({nota}) {
+function EtapasSolicitacao({nota, codparc}) {
     const [activeTab, setActiveTab] = useState("cabecalho");
     const [showFormItens, setShowFormItens] = useState(false);
 
-    
+  
 
     return (
         <>
@@ -49,7 +50,7 @@ function EtapasSolicitacao({nota}) {
                             <h3 className="text-lg font-bold text-gray-700 mb-2">
                                 Cabeçalho
                             </h3>
-                            <FormCabecalho nota={nota}/>
+                            <FormCabecalho nota={nota} codparc={codparc}/>
                         </>
                     )}
 
@@ -80,12 +81,16 @@ function EtapasSolicitacao({nota}) {
                             </div>
 
                             {showFormItens ? (
-                                <FormItens nota={nota}/>
+                                <FormItens nota={nota}  closeForm={() => setShowFormItens(false)}/>
                             ) : (
                                 <TableItens nota={nota}/>
                             )}
+
+
+                            
                         </>
                     )}
+
                 </div>
             </div>
         </>

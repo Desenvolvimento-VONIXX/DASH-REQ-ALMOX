@@ -5,29 +5,39 @@ import { JX } from "../../lib/JX";
 
 
 
-function FormItens({nota}) {
+function FormItens({nota,closeForm}) {
+  const handleBackToTable = () => {
+    
+    closeForm(); // Chama a função passada como prop
+};
 
-    const [itens, setItens] = useState([]); 
-    const [codprod, setCodprod] = useState([]);
-    const [listaProdutos, setLista] = useState([]);
+    const [itens, setItens] = useState([]); //lista para o select de decrprod
+    const [codprod, setCodprod] = useState([]); //lista para o selct de codprod
+    const [listaProdutos, setLista] = useState([]); //lista para pegar o codvol e valor unitario
     const [selectedProduct, setSelectedProduct] = useState(null); 
-    const [selectedCodprod, setSelectedCodprod] = useState(null); 
+    const [selectedCodprod, setSelectedCodprod] = useState(""); 
+    const [estoque, setEstoque] = useState("");
+    const [novoQtd, setNovoQtd] = useState("");
+    const [novoCodprod, setNovoCodprod] = useState("");
     
     useEffect(() => {
       mostrarItens(); 
     }, []);
   
     const mostrarItens = async () => {
-      const query = " SELECT PRO.CODPROD, PRO.DESCRPROD, PRO.CODVOL "
-      +" ,(SELECT ROUND(ENTRADASEMICMS,2) FROM TGFCUS WHERE CODPROD = PRO.CODPROD AND CODEMP =1  "
-      +" AND DTATUAL = (SELECT MAX(DTATUAL) FROM TGFCUS WHERE CODPROD = PRO.CODPROD AND CODEMP =1 )) AS VALORUNIT "
-      +" FROM TGFPRO PRO  "
-      +" WHERE USOPROD IN ('B','I','C') AND ATIVO = 'S' "
-      +" AND PRO.CODPROD = (SELECT TOP 1 CODPROD FROM TGFCUS WHERE TGFCUS.CODPROD = PRO.CODPROD) ";
+      const query = " SELECT PRO.CODPROD, PRO.DESCRPROD, PRO.CODVOL  "
+      +" ,ROUND(CUS.ENTRADASEMICMS,2) AS VALORUNIT ,EST.ESTOQUE  "
+      +"  FROM TGFPRO PRO  "
+      +" JOIN TGFEST EST ON EST.CODPROD = PRO.CODPROD AND EST.CODLOCAL = 1140000  "
+      +" JOIN TGFCUS CUS ON CUS.CODPROD = PRO.CODPROD AND CUS.CODEMP = 1 AND DTATUAL =  "
+      +"  (SELECT MAX(DTATUAL) FROM TGFCUS WHERE CODPROD = PRO.CODPROD AND CODEMP =1 ) "
+      +" WHERE USOPROD IN ('B','I','C') AND PRO.ATIVO = 'S'  "
+      +" AND PRO.CODPROD = (SELECT TOP 1 CODPROD FROM TGFCUS WHERE TGFCUS.CODPROD = PRO.CODPROD) "
+      +"  AND CUS.ENTRADASEMICMS IS NOT NULL ";
   
       try {
         const result = await JX.consultar(query); 
-        console.log("RESULT = ", result);
+        
   
         // Itens com nomes
         const itensArray = result.map((item) => ({
@@ -40,54 +50,92 @@ function FormItens({nota}) {
           value: item.CODPROD,
           label: item.CODPROD,
         }));
-        const listaProdutos = result.map((item) => ({
+        const listaGeralProdutos = result.map((item) => ({
             CODPROD: item.CODPROD,
             DESCRPROD: item.DESCRPROD,
             CODVOL: item.CODVOL,
-            VALORUNIT:item.VALORUNIT
+            VALORUNIT:item.VALORUNIT,
+            ESTOQUE:item.ESTOQUE
         }));
 
 
         setCodprod(codProdArray);
         setItens(itensArray); 
-        setLista(listaProdutos);
+        setLista(listaGeralProdutos);
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
       }
     };
   
-    // Atualiza ambos os selects ao mudar o código
+    
     const handleCodprodChange = (selectedOption) => {
-      setSelectedCodprod(selectedOption); // Atualiza o código selecionado
-      setSelectedProduct(itens.find((item) => item.value === selectedOption?.value) || null); // Sincroniza com o produto
-      console.log("Código selecionado:", selectedOption);
+      setSelectedCodprod(selectedOption); 
+      setSelectedProduct(itens.find((item) => item.value === selectedOption?.value) || null); 
+      setNovoCodprod(selectedOption.value);
+      setEstoque(listaProdutos.find((item) => item.CODPROD === selectedOption.value)?.ESTOQUE)   
     };
   
-    // Atualiza ambos os selects ao mudar o produto
+    
     const handleProductChange = (selectedOption) => {
-      setSelectedProduct(selectedOption); // Atualiza o produto selecionado
-      setSelectedCodprod(codprod.find((item) => item.value === selectedOption?.value) || null); // Sincroniza com o código
-      console.log("Produto selecionado:", selectedOption);
+      setSelectedProduct(selectedOption); 
+      setSelectedCodprod(codprod.find((item) => item.value === selectedOption?.value) || null); 
+      setNovoCodprod(selectedOption.value);
+      setEstoque(listaProdutos.find((item) => item.CODPROD === selectedOption.value)?.ESTOQUE)   
     };
 
+    const handleQtdChange = (e) => {
+      setNovoQtd(e.target.value); 
+    };
 
     const salvarDados = async (e) =>{
 
+      if((novoCodprod == null || novoCodprod == "") || (novoQtd == "" || novoQtd == null)){
+        alert("Escolha o produto e digite a quantidade.");
+      }else if (novoQtd > estoque || estoque <=0){
+        alert("Estoque insuficiente.")
+      }else{
+        
+        const produto = listaProdutos.find((item) => item.CODPROD == novoCodprod)
+        const vlrTotal = parseFloat(produto.VALORUNIT) * novoQtd;
+        //console.log("nota="+nota+"NOVO QTD= "+novoQtd+"  CODPROD= "+novoCodprod +" produto="+produto.VALORUNIT+" vlrTotal "+vlrTotal);
         let dadosIte = [];
+
 
         dadosIte.push({
             CODEMP:1,
-            NUNOTA:2580720,
-            CODPROD:5022056,
+            NUNOTA:nota,
+            CODPROD:novoCodprod,
             CODLOCALORIG:1140000,
-            CODVOL:"UN",
+            CODVOL:produto.CODVOL,
             RESERVA:"S",
             ATUALESTOQUE:1,
-            QTDNEG:1
+            QTDNEG:novoQtd,
+            VLRTOT:vlrTotal,
+            CODVEND:0,
+            VLRDESC:0,
+
+
         })
 
-       const result = await JX.salvar(dadosIte[0],"ItemNota",[{}]);
-       console.log("JX.SALVAR=",result)
+
+
+        await JX.salvar(dadosIte[0], "ItemNota", [{}])
+        .then((result) => {
+          alert('Produto cadastrado com sucesso.');
+          handleBackToTable();
+        })
+        .catch((error) => {
+          alert('Não foi possível cadastrar o produto, tente novamente em alguns minutos.')
+          handleBackToTable();
+        });
+      
+       //console.log("JX.SALVAR="+result.status+"  JX"+result);
+      
+
+
+
+      }
+      
 
     }
   
@@ -96,11 +144,12 @@ function FormItens({nota}) {
         <form>
           <div className="flex space-x-4 mt-2">
             {/* Select de Código */}
-            <div className="w-1/3">
+            <div className="w-1/4">
               <label htmlFor="small-input-1" className="block mb-2 text-sm font-medium text-gray-900">
                 Cód. Produto
               </label>
               <Select
+                id="novoCodprod"
                 options={codprod} 
                 value={selectedCodprod} // Vincula ao estado
                 onChange={handleCodprodChange} 
@@ -110,7 +159,7 @@ function FormItens({nota}) {
             </div>
   
             {/* Select de Produto */}
-            <div className="w-1/3">
+            <div className="w-1/4">
               <label htmlFor="small-input-1" className="block mb-2 text-sm font-medium text-gray-900">
                 Produto Trocado
               </label>
@@ -122,19 +171,36 @@ function FormItens({nota}) {
                 isClearable 
               />
             </div>
+
+            <div className="w-1/4">
+              <label htmlFor="small-input-2" className="block mb-2 text-sm font-medium text-gray-900">
+                Estoque 
+              </label>
+              <input
+              disabled
+                type="number"
+                id="novoQtd"
+                value={estoque}
+                className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs "
+                
+              />
+            </div>
   
             {/* Campo de Quantidade */}
-            <div className="w-1/3">
+            <div className="w-1/4">
               <label htmlFor="small-input-2" className="block mb-2 text-sm font-medium text-gray-900">
                 Quantidade
               </label>
               <input
-                type="text"
+                type="number"
                 id="novoQtd"
+                value={novoQtd}
                 className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs "
+                onChange={handleQtdChange}
               />
             </div>
           </div>
+
 
           <button
                     type="button"
@@ -143,6 +209,7 @@ function FormItens({nota}) {
                 >
                     Salvar
                 </button>
+                
         </form>
       </>
     );

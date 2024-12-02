@@ -6,7 +6,7 @@ import { useEffect } from 'react';
 
 
 
-function FormCabecalho({nota}) {
+function FormCabecalho({nota, codparc}) {
     const signatureRef = useRef(null);
     const [nunota, setNunota] = useState('');
     const [erro, setErro] = useState('');
@@ -46,45 +46,49 @@ function FormCabecalho({nota}) {
             return new Blob([new Uint8Array(array)], { type: mime });
         };
 
-    const handleSaveSignature =  () => {
+    const handleSaveSignature =  async () => {
         if (signatureRef.current) {
 
             function getSessionToken() {
                 return JX.getCookie('JSESSIONID').replace(/\..*/, '');
             }
-        
+
+
+            await gravarTabelaAssinatura();
+            await acionarBtnFaturar();
             const sessionToken = getSessionToken();
 
 
             const imageBase64 = signatureRef.current.toDataURL();
-            console.log('Imagem Base64:', imageBase64);
+           
 
             // Converta para Blob
             const blob = dataURLToBlob(imageBase64);
 
             // Configure os dados do formulário
             const formData = new FormData();
-            formData.append('img', blob, 'signature.png'); // Adiciona o Blob com nome de arquivo
-            formData.append('codigo', sessionToken); // Substitua pelo código real
-            formData.append('nunota', '12345675'); // Substitua pelo número real
+            formData.append('img', blob, 'signature.png'); 
+            formData.append('codigo', sessionToken); 
+            formData.append('nunota', nota); 
+            //formData.append('NOTADEST',nunotaDestino)
 
-            fetch('http://192.168.0.10:5000/avalicoesriscos-1.0/api/avaliacao/insereImg', {
-                mode: 'no-cors',
-                method: 'POST',
-                body: formData,
-            })
-                .then((response) => {
-                    if (!response.ok) {
-                        throw new Error(`Erro na requisição: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then((data) => {
-                    console.log('Resposta do servidor:', data);
-                })
-                .catch((error) => {
-                    console.error('Erro ao enviar:', error);
-                });
+            // fetch('http://192.168.0.10:5000/avalicoesriscos-1.0/api/avaliacao/insereImg', {
+            //     mode: 'no-cors',
+            //     method: 'POST',
+            //     body: formData,
+            // })
+            //     .then((response) => {
+            //         if (!response.ok) {
+            //             throw new Error(`Erro na requisição: ${response.status}`);
+            //         }
+            //         return response.json();
+            //     })
+            //     .then((data) => {
+            //         console.log('Resposta do servidor:', data);
+            //     })
+            //     .catch((error) => {
+            //         console.error('Erro ao enviar:', error);
+            //     });
 
 
         } else {
@@ -92,6 +96,8 @@ function FormCabecalho({nota}) {
             setErro('Assinatura não encontrada.');
         }
     };
+
+
 
     // Função para baixar a imagem PNG
     const downloadSignature = () => {
@@ -105,6 +111,37 @@ function FormCabecalho({nota}) {
             console.error("Assinatura não encontrada.");
         }
     };
+    
+
+    const gravarTabelaAssinatura = async() =>{
+        let assinatura ={
+            NUNOTA: nota,
+            NOTADEST: 0
+        }
+
+        await JX.salvar(assinatura,"AD_ASSINATURAALMOX",[{}]).then(console.log);
+    }
+
+    const acionarBtnFaturar = async() =>{
+        console.log("ACIONAR BOTAO = "+nota)
+       await JX.acionarBotao (
+            {
+                NUNOTA: nota
+            },
+            {
+                tipo         : 'JAVA',         // Tipo do botao de acao (JS, JAVA e SQL)
+                idBotao      : 432
+            }
+        ).then((response) =>{
+            if (response.status == 1) {
+                console.log('SALVOU: '+response);
+            }else{console.log('DEU ERRO: '+response)}
+        });
+    }
+    
+    
+
+
 
     return (
         <>
@@ -164,7 +201,7 @@ function FormCabecalho({nota}) {
                     className="focus:outline-none text-white bg-green-700 hover:bg-green-800 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 mt-5"
                     onClick={handleSaveSignature}
                 >
-                    Salvar
+                    Entregar
                 </button>
             </form>
         </>
@@ -174,42 +211,6 @@ function FormCabecalho({nota}) {
 export default FormCabecalho;
 
 
-async function  consumindoApiAvaliacao(file){
-    function getSessionToken() {
-        return JX.getCookie('JSESSIONID').replace(/\..*/, '');
-    }
 
-    const sessionToken = getSessionToken();
-    
-
-        const url = 'http://192.168.0.10:5000/avalicoesriscos-1.0/api/avaliacao/insereImg';
-
-    
-
-          
-
-          const formData = new FormData();
-          formData.append("nunota", 1234569);
-          formData.append("img", file);
-          formData.append("codigo", sessionToken);
-
-
-         console.log(formData.values);
-              const response = await fetch(url, {
-                  method: "POST", 
-                  headers: {
-                      "Content-Type": "multipart/form-data" 
-                  },
-                  mode: 'no-cors',
-                  body: formData
-              });
-              
-              console.log("token="+sessionToken + " responsew="+response);
-              if(response.status == 200 || response.status == 201 || response.status == 1){
-                alert('Assinatura salva com sucesso!');
-              }else {alert('Não foi possível salvar assinatura')}
-
-
-}
 
 

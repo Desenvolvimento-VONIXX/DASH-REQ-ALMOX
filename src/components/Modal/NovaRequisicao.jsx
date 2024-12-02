@@ -1,9 +1,10 @@
 import { IoCloseOutline } from "react-icons/io5";
 import EtapasSolicitacao from "../Tab/EtapasSolicitacao";
 
-function ModalNovaRequisicao({ onClose, rowData }) {
+function ModalNovaRequisicao({ onClose, rowData , codparc}) {
 
-console.log("MODAL=",{rowData})
+
+
 
 
     return (
@@ -32,7 +33,7 @@ console.log("MODAL=",{rowData})
                     </div>
 
                     <div className="p-4 flex-grow overflow-y-auto">
-                        <EtapasSolicitacao nota={rowData}/>
+                        <EtapasSolicitacao nota={rowData} codparc={codparc}/>
                    
                     </div>
 
@@ -51,6 +52,7 @@ console.log("MODAL=",{rowData})
                         >
                             Fechar
                         </button>
+
                     </div>
                 </div>
             </div>

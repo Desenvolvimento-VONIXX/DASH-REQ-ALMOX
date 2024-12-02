@@ -8,26 +8,29 @@ function TableItens({nota}){
     const [itens, setItens] = useState([]);
     const [selectedRow, setSelectedRow] = useState(null);
     const [currentComponent, setCurrentComponent] = useState("table");
-
+    const [refresh, setRefresh] = useState(null);
 
     useEffect(()=>{
         mostrarItens();
-    },[])
+        setRefresh(false);
+    },[refresh])
 
-    
+ 
 
     const mostrarItens = async (e) =>{
-        let query = "SELECT ITE.CODPROD, PRO.DESCRPROD, ITE.QTDNEG "
+        let query = "SELECT ITE.CODPROD, PRO.DESCRPROD, ITE.QTDNEG, ITE.SEQUENCIA "
         +" FROM TGFITE ITE, TGFPRO PRO "
         +"WHERE PRO.CODPROD=ITE.CODPROD AND NUNOTA = "+nota
 
-        console.log(query);
+        
         try {
             const result = await JX.consultar(query);
             const itensArray = result.map((item) => ({
               codprod: item.CODPROD,
               nome: item.DESCRPROD,
-              qtd: item.QTDNEG
+              qtd: item.QTDNEG,
+              sequencia: item.SEQUENCIA,
+              nota:nota
             }));
       
             setItens(itensArray); 
@@ -37,6 +40,7 @@ function TableItens({nota}){
     }
 
     const trocarItem = (rowData) =>{
+        console.log(rowData);
         setSelectedRow(rowData);
         setCurrentComponent("form");
 
@@ -66,6 +70,7 @@ function TableItens({nota}){
                                     <td className="px-6 py-4">{row.codprod}</td>
                                     <td className="px-6 py-4">{row.nome}</td>
                                     <td className="px-6 py-4">{row.qtd}</td>
+                                    <td className="px-6 py-4 hidden">{row.sequencia}</td>
                                     <td className="px-6 py-4">
                                         <button
                                             type="button"
@@ -74,6 +79,8 @@ function TableItens({nota}){
                                         >
                                             <span className="hidden sm:block">Trocar</span>
                                         </button>
+
+
                                     </td>
                                 </tr>
                             ))}
@@ -84,8 +91,12 @@ function TableItens({nota}){
 
             {currentComponent === "form" && (
                 <FormTrocar
-                    item={selectedRow} 
-                    onBack={() => setCurrentComponent("table")} 
+                    
+                    prodTrocado={selectedRow} 
+                    onBack={() => {
+                        setCurrentComponent("table");
+                        setRefresh(true); // Atualiza o estado para disparar o useEffect
+                    }}
                 />
             )}
         </>
