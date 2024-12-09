@@ -1,10 +1,35 @@
 import { IoCloseOutline } from "react-icons/io5";
 import EtapasSolicitacao from "../Tab/EtapasSolicitacao";
+import { useState } from "react";
+import {JX} from "../../lib/JX";
 
-function ModalNovaRequisicao({ onClose, rowData , codparc}) {
+function ModalNovaRequisicao({ onClose, nunota , codparc,situacao, assinatura}) {
 
+    const [entrega, setEntrega] = useState(situacao)
+    const faturarNota =  async () => {
 
+        await JX.acionarBotao (
+            {
+                NUNOTA: nunota
+            },
+            {
+                tipo         : 'JAVA',         // Tipo do botao de acao (JS, JAVA e SQL)
+                idBotao      : 474      // NA TESTE É 432 NA PRODUÇÃO É 474
+            }
+        ).then((response) =>{
+            if (response.status == 1) {
+                console.log('SALVOU: '+response);
+                alert('Nota faturada com sucesso, colete a assinatura.')
+                setEntrega(1)
+            }else{
+                console.log('DEU ERRO: '+response)
+                alert('Ocorreu um erro ao faturar a nota, tente novamente mais tarde.');
+            }
+        });
 
+        
+    };
+  
 
 
     return (
@@ -33,7 +58,7 @@ function ModalNovaRequisicao({ onClose, rowData , codparc}) {
                     </div>
 
                     <div className="p-4 flex-grow overflow-y-auto">
-                        <EtapasSolicitacao nota={rowData} codparc={codparc}/>
+                        <EtapasSolicitacao nota={nunota} codparc={codparc} situacao={entrega} assinatura={assinatura}/>
                    
                     </div>
 
@@ -51,6 +76,14 @@ function ModalNovaRequisicao({ onClose, rowData , codparc}) {
                             onClick={onClose}
                         >
                             Fechar
+                        </button>
+
+                        <button
+                            type="button"
+                            className={`py-2.5 px-5 ml-4 text-sm font-medium text-white bg-green-700 hover:bg-green-800 rounded-lg  focus:outline-none ${entrega ==1 ?"hidden":""}`}
+                            onClick={faturarNota}
+                        >
+                            Entregar
                         </button>
 
                     </div>

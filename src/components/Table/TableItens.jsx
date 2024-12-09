@@ -3,7 +3,7 @@ import { JX } from "../../lib/JX";
 import FormTrocar from '../Forms/FormTrocar';
 
 
-function TableItens({nota}){
+function TableItens({nota, situacao}){
 
     const [itens, setItens] = useState([]);
     const [selectedRow, setSelectedRow] = useState(null);
@@ -74,7 +74,7 @@ function TableItens({nota}){
                                     <td className="px-6 py-4">
                                         <button
                                             type="button"
-                                            className="focus:outline-none text-white bg-blue-700 hover:bg-blue-800 font-medium rounded-lg text-sm px-4 py-2 sm:px-5 sm:py-1.5 flex items-center space-x-1"
+                                            className={`focus:outline-none text-white bg-blue-700 hover:bg-blue-800 font-medium rounded-lg text-sm px-4 py-2 sm:px-5 sm:py-1.5 flex items-center space-x-1 ${situacao ===1 ? "hidden":""}`}
                                             onClick={() => trocarItem(row)}
                                         >
                                             <span className="hidden sm:block">Trocar</span>
